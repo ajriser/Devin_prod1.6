@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal LLM Data Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Multimodal LLM Data Analyzer</h1>
+            <p>Connect to databases, analyze data, and generate insights with AI</p>
+        </header>
+
+        <nav class="tool-nav">
+            <button class="nav-btn active" data-tool="data-source">Data Sources</button>
+            <button class="nav-btn" data-tool="pdf-context">PDF Context</button>
+            <button class="nav-btn" data-tool="eda">EDA Analysis</button>
+            <button class="nav-btn" data-tool="charts">Visualizations</button>
+            <button class="nav-btn" data-tool="reports">Reports</button>
+        </nav>
+
+        <main class="main-content">
+            <!-- Data Sources Section -->
+            <section id="data-source" class="tool-section active">
+                <h2>Data Sources</h2>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="upload">File Upload</button>
+                    <button class="tab-btn" data-tab="snowflake">Snowflake</button>
+                    <button class="tab-btn" data-tab="sqlserver">SQL Server</button>
+                </div>
+
+                <div id="upload" class="tab-content active">
+                    <div class="upload-area" id="dropzone">
+                        <p>Drag & drop CSV, Excel, or JSON files here</p>
+                        <p>or</p>
+                        <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.json" hidden>
+                        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                    </div>
+                </div>
+
+                <div id="snowflake" class="tab-content">
+                    <form id="snowflake-form" class="connection-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Account</label>
+                                <input type="text" name="account" placeholder="your-account.region">
+                            </div>
+                            <div class="form-group">
+                                <label>Warehouse</label>
+                                <input type="text" name="warehouse" placeholder="COMPUTE_WH">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Database</label>
+                                <input type="text" name="database" placeholder="MY_DATABASE">
+                            </div>
+                            <div class="form-group">
+                                <label>Schema</label>
+                                <input type="text" name="schema" placeholder="PUBLIC">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" name="user" placeholder="username">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" name="password" placeholder="password">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Connect to Snowflake</button>
+                    </form>
+                    <div id="snowflake-status" class="status-message"></div>
+                    
+                    <div id="snowflake-query-section" class="query-section hidden">
+                        <h3>Execute Query</h3>
+                        <textarea id="snowflake-query" placeholder="SELECT * FROM your_table LIMIT 100"></textarea>
+                        <button class="btn btn-primary" onclick="executeSnowflakeQuery()">Run Query</button>
+                    </div>
+                </div>
+
+                <div id="sqlserver" class="tab-content">
+                    <form id="sqlserver-form" class="connection-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Host</label>
+                                <input type="text" name="host" placeholder="server.database.windows.net">
+                            </div>
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input type="text" name="port" value="1433" placeholder="1433">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Database</label>
+                                <input type="text" name="database" placeholder="MyDatabase">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" name="user" placeholder="username">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" name="password" placeholder="password">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Connect to SQL Server</button>
+                    </form>
+                    <div id="sqlserver-status" class="status-message"></div>
+                    
+                    <div id="sqlserver-query-section" class="query-section hidden">
+                        <h3>Execute Query</h3>
+                        <textarea id="sqlserver-query" placeholder="SELECT TOP 100 * FROM your_table"></textarea>
+                        <button class="btn btn-primary" onclick="executeSQLServerQuery()">Run Query</button>
+                    </div>
+                </div>
+
+                <div id="data-preview" class="data-preview hidden">
+                    <h3>Data Preview</h3>
+                    <div class="data-info">
+                        <span id="row-count">0 rows</span>
+                        <span id="col-count">0 columns</span>
+                    </div>
+                    <div class="table-container">
+                        <table id="preview-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PDF Context Section -->
+            <section id="pdf-context" class="tool-section">
+                <h2>PDF Context / Prompts</h2>
+                <p>Upload PDF documents to provide context and definitions for the LLM analysis.</p>
+                
+                <div class="upload-area" id="pdf-dropzone">
+                    <p>Drag & drop PDF files here</p>
+                    <p>or</p>
+                    <input type="file" id="pdf-input" accept=".pdf" multiple hidden>
+                    <button class="btn btn-primary" onclick="document.getElementById('pdf-input').click()">Browse PDFs</button>
+                </div>
+
+                <div id="loaded-pdfs" class="loaded-documents">
+                    <h3>Loaded Documents</h3>
+                    <ul id="pdf-list"></ul>
+                    <button class="btn btn-secondary" onclick="clearPDFs()">Clear All</button>
+                    <button class="btn btn-primary" onclick="setContext()">Set as Context</button>
+                </div>
+
+                <div id="context-status" class="status-message"></div>
+            </section>
+
+            <!-- EDA Section -->
+            <section id="eda" class="tool-section">
+                <h2>Exploratory Data Analysis</h2>
+                
+                <div class="eda-actions">
+                    <button class="btn btn-primary" onclick="getDataInfo()">Dataset Info</button>
+                    <button class="btn btn-primary" onclick="getStatistics()">Statistics</button>
+                    <button class="btn btn-primary" onclick="getCorrelations()">Correlations</button>
+                    <button class="btn btn-primary" onclick="getDataQuality()">Data Quality</button>
+                    <button class="btn btn-primary" onclick="getFullEDAReport()">Full EDA Report</button>
+                </div>
+
+                <div class="eda-column-analysis">
+                    <h3>Column Analysis</h3>
+                    <div class="form-row">
+                        <select id="eda-column-select">
+                            <option value="">Select a column...</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="getValueCounts()">Value Counts</button>
+                        <button class="btn btn-secondary" onclick="detectOutliers()">Detect Outliers</button>
+                    </div>
+                </div>
+
+                <div id="eda-results" class="results-container"></div>
+            </section>
+
+            <!-- Charts Section -->
+            <section id="charts" class="tool-section">
+                <h2>Visualizations</h2>
+                
+                <div class="chart-config">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Chart Type</label>
+                            <select id="chart-type">
+                                <option value="bar">Bar Chart</option>
+                                <option value="line">Line Chart</option>
+                                <option value="scatter">Scatter Plot</option>
+                                <option value="histogram">Histogram</option>
+                                <option value="box">Box Plot</option>
+                                <option value="pie">Pie Chart</option>
+                                <option value="heatmap">Correlation Heatmap</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="chart-title" placeholder="Chart Title">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>X Axis / Column</label>
+                            <select id="chart-x"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Y Axis</label>
+                            <select id="chart-y"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Color By</label>
+                            <select id="chart-color">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createChart()">Generate Chart</button>
+                </div>
+
+                <div id="chart-container" class="chart-display"></div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="tool-section">
+                <h2>Generate Reports</h2>
+                
+                <div class="report-options">
+                    <div class="report-card">
+                        <h3>PDF Report</h3>
+                        <p>Generate a comprehensive PDF report with statistics and data.</p>
+                        <input type="text" id="pdf-report-title" placeholder="Report Title" value="Data Analysis Report">
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="pdf-include-data" checked> Include Data Sample</label>
+                            <label><input type="checkbox" id="pdf-include-stats" checked> Include Statistics</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="generatePDFReport()">Generate PDF</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>Excel Report</h3>
+                        <p>Export data and statistics to Excel format.</p>
+                        <input type="text" id="excel-report-title" placeholder="Report Title" value="Data Analysis Report">
+                        <button class="btn btn-primary" onclick="generateExcelReport()">Generate Excel</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>CSV Export</h3>
+                        <p>Export current data to CSV format.</p>
+                        <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>JSON Export</h3>
+                        <p>Export current data to JSON format.</p>
+                        <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+                    </div>
+                </div>
+
+                <div id="generated-reports" class="generated-reports">
+                    <h3>Generated Reports</h3>
+                    <ul id="reports-list"></ul>
+                    <button class="btn btn-secondary" onclick="refreshReportsList()">Refresh List</button>
+                </div>
+            </section>
+        </main>
+
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

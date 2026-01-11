@@ -1,0 +1,15 @@
+flask==3.0.0
+snowflake-connector-python==3.6.0
+pyodbc==5.0.1
+pymssql==2.2.11
+pandas==2.1.4
+numpy==1.26.2
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.18.0
+pypdf2==3.0.1
+python-dotenv==1.0.0
+reportlab==4.0.8
+kaleido==0.2.1
+openpyxl==3.1.2
+Werkzeug==3.0.1
